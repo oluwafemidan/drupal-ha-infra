@@ -72,12 +72,17 @@ jobs:
         DB_USER: ${{ secrets.STAGING_DB_USER }}
         DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
 
+    - name: Debug test reports
+      run: |
+        echo "📂 Listing test reports..."
+        ls -R tests || true
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: tests/reports/
+        path: tests/reports/*.xml
         retention-days: 7
   deploy-staging:
     needs: build-and-test
@@ -151,4 +156,5 @@ jobs:
       run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
       env:
         PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+
 
