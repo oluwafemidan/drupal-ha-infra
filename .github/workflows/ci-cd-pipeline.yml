@@ -2,148 +2,140 @@ name: Drupal CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 env:
-  PHP_VERSION: "8.1"
-  NODE_VERSION: "16"
+  PHP_VERSION: '8.1'
+  NODE_VERSION: '16'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     environment: staging
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: gd, xml, curl, mbstring, zip, json, mysql, intl
-          coverage: none
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: gd, xml, curl, mbstring, zip, json, mysql, intl
+        coverage: none
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip git mysql-client
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zip unzip git mysql-client
 
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --no-progress
+    - name: Install Composer dependencies
+      run: composer install --no-interaction --no-progress
 
-      - name: Run build script
-        run: chmod +x scripts/build.sh && ./scripts/build.sh
+    - name: Run build script
+      run: chmod +x scripts/build.sh && ./scripts/build.sh
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-artifacts
-          path: drupal-build-*.tar.gz
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4  # ← CHANGED FROM v3 to v4
+      with:
+        name: build-artifacts
+        path: drupal-build-*.tar.gz
 
-      - name: Run unit tests
-        run: |
-          mkdir -p tests/reports
-          chmod +x scripts/test.sh && ./scripts/test.sh --unit
+    - name: Run unit tests
+      run: chmod +x scripts/test.sh && ./scripts/test.sh --unit
 
-      - name: Run integration tests
-        run: |
-          mkdir -p tests/reports
-          chmod +x scripts/test.sh && ./scripts/test.sh --integration
-        env:
-          DB_HOST: ${{ secrets.STAGING_DB_HOST }}
-          DB_NAME: ${{ secrets.STAGING_DB_NAME }}
-          DB_USER: ${{ secrets.STAGING_DB_USER }}
-          DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+    - name: Run integration tests
+      run: chmod +x scripts/test.sh && ./scripts/test.sh --integration
+      env:
+        DB_HOST: ${{ secrets.STAGING_DB_HOST }}
+        DB_NAME: ${{ secrets.STAGING_DB_NAME }}
+        DB_USER: ${{ secrets.STAGING_DB_USER }}
+        DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-results
-          path: tests/reports/
-          retention-days: 7 # Keep reports for 7 days
+    - name: Upload test results
+      uses: actions/upload-artifact@v4  # ← CHANGED FROM v3 to v4
+      if: always()
+      with:
+        name: test-results
+        path: tests/reports/
+        retention-days: 7
 
   deploy-staging:
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: staging
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-          path: .
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4  # ← CHANGED FROM v3 to v4
+      with:
+        name: build-artifacts
+        path: .
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
-      - name: Deploy to staging
-        run: chmod +x scripts/deploy-staging.sh && ./scripts/deploy-staging.sh
-        env:
-          STAGING_INSTANCE_IPS: ${{ secrets.STAGING_INSTANCE_IPS }}
-          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+    - name: Deploy to staging
+      run: chmod +x scripts/deploy-staging.sh && ./scripts/deploy-staging.sh
+      env:
+        STAGING_INSTANCE_IPS: ${{ secrets.STAGING_INSTANCE_IPS }}
+        STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
 
-      - name: Run smoke tests
-        run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
+    - name: Run smoke tests
+      run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
+      env:
+        STAGING_URL: ${{ secrets.STAGING_URL }}
 
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
     if: github.ref == 'refs/heads/main'
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-          path: .
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4  # ← CHANGED FROM v3 to v4
+      with:
+        name: build-artifacts
+        path: .
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
-      - name: Wait for manual approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: ${{ secrets.PRODUCTION_APPROVERS }}
+    - name: Wait for manual approval
+      uses: trstringer/manual-approval@v1
+      with:
+        secret: ${{ github.TOKEN }}
+        approvers: ${{ secrets.PRODUCTION_APPROVERS }}
 
-      - name: Deploy to production
-        run: chmod +x scripts/deploy-production.sh && ./scripts/deploy-production.sh
-        env:
-          PRODUCTION_INSTANCE_IPS: ${{ secrets.PRODUCTION_INSTANCE_IPS }}
-          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+    - name: Deploy to production
+      run: chmod +x scripts/deploy-production.sh && ./scripts/deploy-production.sh
+      env:
+        PRODUCTION_INSTANCE_IPS: ${{ secrets.PRODUCTION_INSTANCE_IPS }}
+        PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
 
-      - name: Run production smoke tests
-        run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
-        env:
-          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
-
-      - name: Setup test environment
-        run: chmod +x scripts/setup-test-environment.sh && ./scripts/setup-test-environment.sh
-
+    - name: Run production smoke tests
+      run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
+      env:
+        PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
