@@ -146,3 +146,4 @@ jobs:
 
       - name: Setup test environment
         run: chmod +x scripts/setup-test-environment.sh && ./scripts/setup-test-environment.sh
+
