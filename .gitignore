@@ -1,0 +1,76 @@
+# Drupal specific ignores
+sites/*/files/
+sites/*/private/
+sites/*/settings.local.php
+sites/*/services.local.yml
+
+# Build artifacts
+drupal-build-*.tar.gz
+build/
+dist/
+
+# Test reports and outputs
+tests/reports/*.xml
+tests/reports/*.log
+.coverage/
+phpunit.xml
+
+# Composer
+/vendor/
+composer.lock
+composer.phar
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.webpack/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+/tmp/
+/var/
+
+# Apache .htaccess if not using web root
+!.htaccess
+
+# Git ignore the gitkeep file but keep the directory
+tests/reports/*
+!tests/reports/.gitkeep
+
+# SSH keys (in case they get created temporarily)
+*.pem
+*.key
+
+# Backup files
+*.backup
+*.bak
+
+# SSH private keys
+ssh-keys/*.pem
+ssh-keys/*.key
+!ssh-keys/*.pub  # Keep public keys

@@ -1,0 +1,25 @@
+---
+- name: Configure Drupal Application Servers
+  hosts: drupal_servers
+  become: yes
+  vars:
+    db_name: "{{ DB_NAME }}"
+    db_user: "{{ DB_USER }}"
+    db_password: "{{ DB_PASSWORD }}"
+    db_host: "{{ DB_HOST }}"
+    drupal_version: "9.5.11"
+    drupal_checksum: "a1f4e3c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4"
+    web_root: "/var/www/html"
+    sync_user: "syncuser"
+
+  roles:
+    - role: drupal
+
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          Drupal deployed successfully!
+          Web root: {{ web_root }}
+          Database: {{ db_host }}
+          Sync user: {{ sync_user }}

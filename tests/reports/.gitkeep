@@ -1,0 +1,3 @@
+# This directory is for storing test reports generated during CI/CD
+# Actual report files (*.xml) are ignored by git via .gitignore
+# but this file ensures the directory structure is maintained

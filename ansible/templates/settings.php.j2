@@ -1,0 +1,129 @@
+<?php
+
+/**
+ * @file
+ * Drupal site-specific configuration file.
+ */
+
+$databases['default']['default'] = array(
+  'database' => '{{ db_name }}',
+  'username' => '{{ db_user }}',
+  'password' => '{{ db_password }}',
+  'host' => '{{ db_host }}',
+  'port' => '3306',
+  'driver' => 'mysql',
+  'prefix' => '',
+  'collation' => 'utf8mb4_general_ci',
+);
+
+/**
+ * Salt for one-time login links, cancel links, form tokens, etc.
+ */
+$settings['hash_salt'] = '{{ 64 | random | to_uuid }}';
+
+/**
+ * Configuration sync directory.
+ */
+$config_directories['sync'] = 'sites/default/files/config_{{ 8 | random | to_uuid }}/sync';
+
+/**
+ * Temporary file path.
+ */
+$settings['file_temp_path'] = '/tmp';
+
+/**
+ * Public file path.
+ */
+$settings['file_public_path'] = 'sites/default/files';
+
+/**
+ * Private file path.
+ */
+$settings['file_private_path'] = 'sites/default/private/files';
+
+/**
+ * Session write interval.
+ */
+$settings['session_write_interval'] = 180;
+
+/**
+ * Trusted host patterns.
+ */
+$settings['trusted_host_patterns'] = array(
+  '^.*$',  # For testing - restrict this in production
+);
+
+/**
+ * Reverse proxy configuration.
+ */
+$settings['reverse_proxy'] = TRUE;
+$settings['reverse_proxy_addresses'] = array('127.0.0.1');
+
+/**
+ * Page compression.
+ */
+$config['system.performance']['css']['preprocess'] = FALSE;
+$config['system.performance']['js']['preprocess'] = FALSE;
+
+/**
+ * Error logging.
+ */
+$config['system.logging']['error_level'] = 'hide';
+
+/**
+ * Cache configurations.
+ */
+$settings['cache']['bins']['render'] = 'cache.backend.null';
+$settings['cache']['default'] = 'cache.backend.null';
+
+/**
+ * File scan ignore directories.
+ */
+$settings['file_scan_ignore_directories'] = [
+  'node_modules',
+  'bower_components',
+];
+
+/**
+ * Environment indicator.
+ */
+$config['environment_indicator.indicator']['name'] = 'Production';
+$config['environment_indicator.indicator']['bg_color'] = '#FF0000';
+$config['environment_indicator.indicator']['fg_color'] = '#FFFFFF';
+
+/**
+ * Load services definition file.
+ */
+$settings['container_yamls'][] = $app_root . '/' . $site_path . '/services.yml';
+
+/**
+ * Override services.
+ */
+$settings['container_yamls'][] = $app_root . '/' . $site_path . '/services.override.yml';
+
+/**
+ * Skip file permissions hardening.
+ */
+$settings['skip_permissions_hardening'] = TRUE;
+
+/**
+ * Database logging.
+ */
+$config['database_logger']['settings']['threshold'] = 'warning';
+
+/**
+ * Set the default timezone.
+ */
+date_default_timezone_set('UTC');
+
+/**
+ * Set the default country.
+ */
+$config['system.date']['country']['default'] = 'US';
+
+/**
+ * Load local development override configuration, if available.
+ */
+if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
+  include $app_root . '/' . $site_path . '/settings.local.php';
+}

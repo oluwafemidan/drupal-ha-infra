@@ -1,0 +1,179 @@
+---
+- name: Update apt cache and install prerequisites
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: [packages]
+
+- name: Install required system packages
+  apt:
+    name:
+      - apache2
+      - php
+      - php-mysql
+      - php-gd
+      - php-xml
+      - php-curl
+      - php-mbstring
+      - php-zip
+      - php-intl
+      - libapache2-mod-php
+      - rsync
+      - unzip
+      - curl
+      - git
+      - nfs-common
+    state: present
+  tags: [packages]
+
+- name: Create sync user for file synchronization
+  user:
+    name: "{{ sync_user }}"
+    state: present
+    shell: /bin/bash
+    groups: www-data
+    append: yes
+  tags: [sync, users]
+
+- name: Create .ssh directory for sync user
+  file:
+    path: "/home/{{ sync_user }}/.ssh"
+    state: directory
+    owner: "{{ sync_user }}"
+    group: "{{ sync_user }}"
+    mode: "0700"
+  tags: [sync, ssh]
+
+- name: Deploy SSH public key for sync user
+  copy:
+    src: "files/sync_key.pub"
+    dest: "/home/{{ sync_user }}/.ssh/authorized_keys"
+    owner: "{{ sync_user }}"
+    group: "{{ sync_user }}"
+    mode: "0600"
+  tags: [sync, ssh]
+
+- name: Deploy private SSH key for sync user
+  copy:
+    src: "files/sync_key"
+    dest: "/home/{{ sync_user }}/.ssh/sync_key"
+    owner: "{{ sync_user }}"
+    group: "{{ sync_user }}"
+    mode: "0600"
+  tags: [sync, ssh]
+
+- name: Create web root directory
+  file:
+    path: "{{ web_root }}"
+    state: directory
+    owner: "{{ sync_user }}"
+    group: www-data
+    mode: "0775"
+  tags: [drupal, directories]
+
+- name: Download Drupal
+  get_url:
+    url: "https://ftp.drupal.org/files/projects/drupal-{{ drupal_version }}.tar.gz"
+    dest: "/tmp/drupal-{{ drupal_version }}.tar.gz"
+    checksum: "sha256:{{ drupal_checksum }}"
+  tags: [drupal, download]
+
+- name: Extract Drupal
+  unarchive:
+    src: "/tmp/drupal-{{ drupal_version }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+  tags: [drupal, extraction]
+
+- name: Copy Drupal to web root
+  command: "cp -r /tmp/drupal-{{ drupal_version }}/* {{ web_root }}/"
+  args:
+    creates: "{{ web_root }}/index.php"
+  tags: [drupal, deployment]
+
+- name: Set correct permissions on web root
+  file:
+    path: "{{ web_root }}"
+    owner: "{{ sync_user }}"
+    group: www-data
+    mode: "0775"
+    recurse: yes
+  tags: [drupal, permissions]
+
+- name: Configure Apache virtual host
+  template:
+    src: "templates/drupal.conf.j2"
+    dest: "/etc/apache2/sites-available/drupal.conf"
+  notify: Restart Apache
+  tags: [apache, configuration]
+
+- name: Enable Drupal site
+  command: a2ensite drupal.conf
+  notify: Restart Apache
+  tags: [apache, configuration]
+
+- name: Disable default site
+  command: a2dissite 000-default.conf
+  notify: Restart Apache
+  tags: [apache, configuration]
+
+- name: Enable required Apache modules
+  command: "a2enmod {{ item }}"
+  with_items:
+    - rewrite
+    - headers
+  notify: Restart Apache
+  tags: [apache, configuration]
+
+- name: Create Drupal settings directory
+  file:
+    path: "{{ web_root }}/sites/default"
+    state: directory
+    owner: "{{ sync_user }}"
+    group: www-data
+    mode: "0775"
+  tags: [drupal, directories]
+
+- name: Configure Drupal settings
+  template:
+    src: "templates/settings.php.j2"
+    dest: "{{ web_root }}/sites/default/settings.php"
+    owner: www-data
+    group: www-data
+    mode: "0644"
+  tags: [drupal, configuration]
+
+- name: Create files directory
+  file:
+    path: "{{ web_root }}/sites/default/files"
+    state: directory
+    owner: "{{ sync_user }}"
+    group: www-data
+    mode: "0775"
+  tags: [drupal, directories]
+
+- name: Deploy file synchronization script
+  copy:
+    src: "files/sync-files.sh"
+    dest: "/usr/local/bin/sync-drupal-files"
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [sync, scripts]
+
+- name: Create log directory for sync script
+  file:
+    path: "/var/log/drupal"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [sync, directories]
+
+- name: Add cron job for file synchronization
+  cron:
+    name: "Drupal file synchronization"
+    job: "/usr/local/bin/sync-drupal-files >> /var/log/drupal/sync.log 2>&1"
+    minute: "*/5"
+    user: "{{ sync_user }}"
+  tags: [sync, cron]

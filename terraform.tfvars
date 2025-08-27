@@ -1,0 +1,7 @@
+region           = "us-east-1"
+instance_type    = "t3.medium"
+db_instance_class = "db.t3.micro"
+db_name          = "drupaldb"
+db_username      = "drupaladmin"
+db_password      = "StrongPassword1234$$"  
+key_name         = "drupal-key"  

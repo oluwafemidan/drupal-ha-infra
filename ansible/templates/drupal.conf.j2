@@ -1,0 +1,19 @@
+<VirtualHost *:80>
+    ServerName {{ ansible_hostname }}
+    ServerAdmin webmaster@localhost
+    DocumentRoot {{ web_root }}
+
+    <Directory {{ web_root }}>
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/drupal_error.log
+    CustomLog ${APACHE_LOG_DIR}/drupal_access.log combined
+
+    # Security headers
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options SAMEORIGIN
+    Header always set X-XSS-Protection "1; mode=block"
+</VirtualHost>

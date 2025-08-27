@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Drupal site-specific configuration file.
+ * This file is managed by Ansible.
+ */
+
+// Database configuration
+$databases['default']['default'] = array(
+  'database' => '{{ db_name }}',
+  'username' => '{{ db_user }}',
+  'password' => '{{ db_password }}',
+  'host' => '{{ db_host }}',
+  'port' => '3306',
+  'driver' => 'mysql',
+  'prefix' => '',
+  'collation' => 'utf8mb4_general_ci',
+);
+
+// Hash salt for security
+$settings['hash_salt'] = '{{ 64 | random | to_uuid }}';
+
+// Configuration sync directory
+$settings['config_sync_directory'] = 'sites/default/files/config_{{ 8 | random | to_uuid }}/sync';
+
+// File paths
+$settings['file_public_path'] = 'sites/default/files';
+$settings['file_private_path'] = 'sites/default/private/files';
+
+// Trusted host patterns (update for production)
+$settings['trusted_host_patterns'] = [
+  '^.*$',  // Accept all hosts for development
+];
+
+// Performance settings
+$config['system.performance']['css']['preprocess'] = FALSE;
+$config['system.performance']['js']['preprocess'] = FALSE;
+
+// Error reporting
+$config['system.logging']['error_level'] = 'all';
+
+// Cache settings for multi-server environment
+$settings['cache']['default'] = 'cache.backend.database';
+
+// Reverse proxy support (for load balancer)
+$settings['reverse_proxy'] = TRUE;
+$settings['reverse_proxy_addresses'] = ['127.0.0.1'];
+
+// File system settings
+$settings['file_chmod_directory'] = 0775;
+$settings['file_chmod_file'] = 0664;
+
+// Session handling
+$settings['session_write_interval'] = 180;
+
+// Skip permissions hardening for easier management
+$settings['skip_permissions_hardening'] = TRUE;
+
+// Set timezone
+date_default_timezone_set('UTC');
+
+// Load services
+$settings['container_yamls'][] = $app_root . '/' . $site_path . '/services.yml';
+
+// Environment indicator
+$config['environment_indicator.indicator']['name'] = 'HA-Cluster';
+$config['environment_indicator.indicator']['bg_color'] = '#006600';
+$config['environment_indicator.indicator']['fg_color'] = '#FFFFFF';
+
+/**
+ * Multi-server file synchronization settings
+ * For shared files across instances
+ */
+$settings['file_scan_ignore_directories'] = [
+  'node_modules',
+  'bower_components',
+  'vendor',
+];
+
+/**
+ * Load local settings if available
+ * (for environment-specific overrides)
+ */
+$local_settings = __DIR__ . '/settings.local.php';
+if (file_exists($local_settings)) {
+  include $local_settings;
+}
+
+/**
+ * Ensure the config directory exists
+ * This is handled by Ansible but included for completeness
+ */
+if (!is_dir($app_root . '/' . $site_path . '/files')) {
+  mkdir($app_root . '/' . $site_path . '/files', 0775, TRUE);
+}
