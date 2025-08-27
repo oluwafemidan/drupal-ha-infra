@@ -62,10 +62,10 @@ jobs:
         fi
 
     - name: Run unit tests
-      run: chmod +x scripts/test.sh && ./scripts/test.sh --unit
+      run: bash test.sh --unit
 
     - name: Run integration tests
-      run: chmod +x scripts/test.sh && ./scripts/test.sh --integration
+      run: bash test.sh --integration
       env:
         DB_HOST: ${{ secrets.STAGING_DB_HOST }}
         DB_NAME: ${{ secrets.STAGING_DB_NAME }}
@@ -156,6 +156,7 @@ jobs:
       run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
       env:
         PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+
 
 
 
