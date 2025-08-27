@@ -82,7 +82,7 @@ jobs:
       if: always()
       with:
         name: test-results
-        path: tests/reports/
+        path: tests/reports/*.xml
         retention-days: 7
   deploy-staging:
     needs: build-and-test
@@ -156,6 +156,7 @@ jobs:
       run: chmod +x scripts/smoke-tests.sh && ./scripts/smoke-tests.sh
       env:
         PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+
 
 
 
