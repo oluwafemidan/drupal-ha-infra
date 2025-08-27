@@ -3,11 +3,15 @@ set -e
 
 echo "🚀 Building Drupal application..."
 
-# Create reports directory for tests (if it doesn't exist)
+# Create reports directory for tests
 mkdir -p tests/reports
 
-# Install dependencies
-composer install --no-dev --optimize-autoloader
+# Install dependencies only if composer.json exists
+if [ -f "composer.json" ]; then
+    composer install --no-dev --optimize-autoloader
+else
+    echo "⚠️  No composer.json found, skipping composer install"
+fi
 
 # Build frontend assets (if using theme)
 if [ -d "web/themes/custom/my_theme" ]; then
@@ -18,7 +22,7 @@ if [ -d "web/themes/custom/my_theme" ]; then
     cd ../../../..
 fi
 
-# Create build artifact (exclude test reports and other non-essential files)
+# Create build artifact
 tar -czf drupal-build-$(date +%Y%m%d%H%M%S).tar.gz \
     --exclude='.git' \
     --exclude='.github' \
